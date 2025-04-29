@@ -214,9 +214,6 @@ export default class KarnaughMap extends React.Component {
         inputDontCares: inputDontCares,
         allValidSolutions: [], // Reset všech platných řešení
         currentSolutionIndex: 0 // Reset indexu aktuálního řešení
-      }, () => {
-        // Pokud je to nutné, vyvolejte novou analýzu a zobrazení
-        this.Algorithm(this.state.squares);
       });
     }
   
