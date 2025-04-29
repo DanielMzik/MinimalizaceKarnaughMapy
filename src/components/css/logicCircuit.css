@@ -1,0 +1,48 @@
+.logic-circuit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 30px;
+  }
+  
+  .gate-block {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .inputs {
+    display: flex;
+    margin-right: 10px;
+  }
+  
+  .input {
+    position: relative;
+    margin-right: 5px;
+  }
+  
+  .not {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 20px;
+  }
+  
+  .gate {
+    height: 60px;
+  }
+  
+  .output {
+    height: 40px;
+    margin-left: 10px;
+  }
+  
+  .final-gate {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  
+  
+  

@@ -1,0 +1,145 @@
+.kMap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  margin-top: 50px;    
+  }
+  .Solution {
+  display: none;
+  text-align: center;
+  font-size: 20px;
+  margin: 20px auto;
+  max-width: 100%;           
+  overflow-x: auto;          
+  }
+
+  .sol {
+    position: relative;
+    background-color: white;
+    display: inline-flex;           
+    flex-wrap: nowrap;              
+    gap: 8px;
+    padding: 12px 20px;
+    margin: 8px 0;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    min-height: 29px;
+    max-width: 100%;                
+    overflow-x: auto;               
+    white-space: nowrap;            
+  }
+  
+  .groupSop, .groupPos, .plus{
+    position: relative;
+    display: inline-block;
+    color: white;
+    width: 75px;
+    text-align: center;
+    padding: 5px 0px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-style: Arial;
+    font-weight: bold;
+    opacity: 0.8;
+  }
+  .groupPos{
+    width: 105px;
+  }
+  .plus{
+    color: black;
+    width: 20px;
+    font-size: 20px;
+    padding: 0px 0px;
+  }
+  .diagram-wrapper {
+    margin-top: 40px;
+    background-color: #fef1e6;
+    border: 1px solid #e0d6ca;
+    border-radius: 10px;
+    padding: 20px;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  .logic-circuit-box {
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  } 
+  .mapContainer {
+    display: flex;
+    flex-direction: column;   /* místo row */
+    align-items: center;      /* zarovná obsah na střed */
+    gap: 20px;
+    padding: 30px;
+    background-color: white;
+    border-radius: 12px;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    width: fit-content;
+    margin: 30px auto;
+  }
+  
+
+  /* Nový kontejner pod expressionInput */
+.mapAndOptions {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  align-items: flex-start;
+}
+
+/* Aby bylo input menu nad tím a zarovnáno na střed */
+.expressionInput {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.expressionInput input {
+  margin: 0 5px;
+  padding: 5px 10px;
+  width: 150px;
+}
+
+.btn-insert {
+  font-size: 16px;
+  cursor: pointer;
+  color: #fff;
+  background-color: #337ab7;
+  border: 1px solid #2e6da4;
+  padding: 6px 20px;
+  margin-top: 10px;        /* přidá mezeru mezi inputy a tlačítkem */
+  border-radius: 6px;
+  width: auto;             /* nebude natažené */
+  display: inline-block;   /* zarovná se vedle, pokud bude potřeba */
+}
+
+.functionLabel {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  display: inline-block;
+}
+
+.kMapOutput {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  margin: 20px auto; /* ✅ zarovnání na střed */
+  max-width: 500px;     /* nastavíš jednotnou šířku */
+  width: fit-content;
+  max-width: 100%;
+}
+
+.kMapOutput, .truthTable, .nameTab {
+  display: none;
+}
+
+
+
