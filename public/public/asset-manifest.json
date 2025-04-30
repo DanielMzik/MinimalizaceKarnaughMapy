@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/Karnaugh-Map-Solver/static/css/main.5b988d8a.css",
+    "main.js": "/Karnaugh-Map-Solver/static/js/main.e2b39a31.js",
+    "index.html": "/Karnaugh-Map-Solver/index.html",
+    "main.5b988d8a.css.map": "/Karnaugh-Map-Solver/static/css/main.5b988d8a.css.map",
+    "main.e2b39a31.js.map": "/Karnaugh-Map-Solver/static/js/main.e2b39a31.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.5b988d8a.css",
+    "static/js/main.e2b39a31.js"
+  ]
+}
