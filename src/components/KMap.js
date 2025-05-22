@@ -825,32 +825,33 @@ updateInputsAndFunctionFromMap() {
     }
     
     CleanAlgorithm(groups) {
+      let filteredGroups = groups;
+    
+      // ❗️Filtruj pouze pro 4 proměnné
       if (this.state.typeMap === 4) {
-        groups = filterGroups(groups, this.state.squares, this.state.typeSol);
-        groups = removeSubsets(groups);
+        filteredGroups = filterGroups(groups, this.state.squares, this.state.typeSol);
+        filteredGroups = removeSubsets(filteredGroups);
       }
-
-      groups.sort((a, b) => b.length - a.length); // Seřadit sestupně dle velikosti
-      const temp = $.extend(true, [], groups); // Deep copy
+    
+      filteredGroups.sort((a, b) => b.length - a.length);
+      const maxSize = filteredGroups.length > 0 ? filteredGroups[0].length : 0;
+      
+      // ZACHOVEJ POUZE NEJVĚTŠÍ SKUPINY
+      const temp = $.extend(true, [], filteredGroups.filter(g => g.length === maxSize));
     
       const allRelevant = [];
       for (let i = 0; i < this.state.squares.length; i++) {
         for (let j = 0; j < this.state.squares[0].length; j++) {
-          if (this.state.typeSol === "SOP") {
-            if (this.state.squares[i][j][0] === 1) {
-              allRelevant.push(i + "," + j);
-            }
-          } else if (this.state.typeSol === "POS") {
-            if (this.state.squares[i][j][0] === 0) {
-              allRelevant.push(i + "," + j);
-            }
+          const val = this.state.squares[i][j][0];
+          if ((this.state.typeSol === "SOP" && val === 1) || (this.state.typeSol === "POS" && val === 0)) {
+            allRelevant.push(i + "," + j);
           }
         }
       }
     
       const totalGroups = temp.length;
       const allValidSolutions = [];
-    
+      const seen = new Set(); // ukládáme serializované unikátní kombinace
       let foundSize = null;
     
       for (let size = 1; size <= totalGroups; size++) {
@@ -863,18 +864,29 @@ updateInputsAndFunctionFromMap() {
               covered.add(cell.row + "," + cell.col);
             }
           }
+    
           if (allRelevant.every(coord => covered.has(coord))) {
-            if (foundSize === null) {
-              foundSize = size;
-            }
-            if (size === foundSize) { // ukládat jen kombinace s minimálním počtem skupin
-              allValidSolutions.push(combo);
+            // 🔒 Normalizuj skupiny – seřaď buňky i skupiny, aby klíč byl unikátní pro obsah, ne pořadí
+            const normalizedCombo = combo
+              .map(group => group
+                .map(cell => `${cell.row},${cell.col}`)
+                .sort()
+                .join('|')
+              )
+              .sort()
+              .join(';');
+    
+            if (!seen.has(normalizedCombo)) {
+              seen.add(normalizedCombo);
+              if (foundSize === null) foundSize = size;
+              if (size === foundSize) {
+                allValidSolutions.push(combo);
+              }
             }
           }
         }
-        if (foundSize !== null) {
-          break; // našli jsme všechna minimální řešení - menší velikost už není
-        }
+    
+        if (foundSize !== null) break; // už jsme našli všechna minimální řešení
       }
     
       console.log("✅ Všechna minimální řešení:", allValidSolutions);
@@ -884,8 +896,8 @@ updateInputsAndFunctionFromMap() {
           allValidSolutions: allValidSolutions,
           currentSolutionIndex: 0
         }, () => {
-          this.Solution(this.state.allValidSolutions[0], this.state.allValidSolutions[0]);
-          this.drawGroup(this.state.allValidSolutions[0], this.state.allValidSolutions[0]);
+          this.Solution(allValidSolutions[0], allValidSolutions[0]);
+          this.drawGroup(allValidSolutions[0], allValidSolutions[0]);
         });
       }
     }
