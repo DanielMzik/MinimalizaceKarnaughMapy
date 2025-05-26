@@ -33,9 +33,31 @@ export default class KarnaughMap extends React.Component {
     }
 
     // Funkce pro změnu zobrazené rovnice
-    setEquationType = (type) => {
-      this.setState({ EquationType: type });
-    }
+setEquationType = (type) => {
+  if (this.state.EquationType === type) return; 
+  const { squares } = this.state;
+
+  // Přepni hodnoty 1 <-> 0, 'X' nech beze změny
+  const newSquares = squares.map(row => 
+    row.map(cell => {
+      let val = cell[0];
+      if (val === 1) val = 0;
+      else if (val === 0) val = 1;
+      return [val, cell[1], cell[2]];
+    })
+  );
+
+  this.reset();
+
+  // Přepni typ výrazu i výpočtu
+  this.setState({ 
+    EquationType: type,
+    squares: newSquares
+  }, () => {
+    this.updateInputsAndFunctionFromMap();
+  });
+}
+
     
   
     // metoda, která vrací matici binárních hodnot na základě zadané velikosti
@@ -824,86 +846,80 @@ updateInputsAndFunctionFromMap() {
       this.CleanAlgorithm($.extend(true, [], groups));
     }
     
-    CleanAlgorithm(groups) {
-      let filteredGroups = groups;
-    
-      // ❗️Filtruj pouze pro 4 proměnné
-      if (this.state.typeMap === 4) {
-        filteredGroups = filterGroups(groups, this.state.squares, this.state.typeSol);
-        filteredGroups = removeSubsets(filteredGroups);
-      }
-    
-      filteredGroups.sort((a, b) => b.length - a.length);
-      const maxSize = filteredGroups.length > 0 ? filteredGroups[0].length : 0;
-      
-      // ZACHOVEJ POUZE NEJVĚTŠÍ SKUPINY
-      const temp = $.extend(true, [], filteredGroups.filter(g => g.length === maxSize));
-    
-      const allRelevant = [];
-      for (let i = 0; i < this.state.squares.length; i++) {
-        for (let j = 0; j < this.state.squares[0].length; j++) {
-          const val = this.state.squares[i][j][0];
-          if ((this.state.typeSol === "SOP" && val === 1) || (this.state.typeSol === "POS" && val === 0)) {
-            allRelevant.push(i + "," + j);
-          }
-        }
-      }
-    
-      const totalGroups = temp.length;
-      const allValidSolutions = [];
-      const seen = new Set(); // ukládáme serializované unikátní kombinace
-      let foundSize = null;
-    
-      for (let size = 1; size <= totalGroups; size++) {
-        const combinations = generateCombinations(temp, size);
-    
-        for (const combo of combinations) {
-          const covered = new Set();
-          for (const group of combo) {
-            for (const cell of group) {
-              covered.add(cell.row + "," + cell.col);
-            }
-          }
-    
-          if (allRelevant.every(coord => covered.has(coord))) {
-            // 🔒 Normalizuj skupiny – seřaď buňky i skupiny, aby klíč byl unikátní pro obsah, ne pořadí
-            const normalizedCombo = combo
-              .map(group => group
-                .map(cell => `${cell.row},${cell.col}`)
-                .sort()
-                .join('|')
-              )
-              .sort()
-              .join(';');
-    
-            if (!seen.has(normalizedCombo)) {
-              seen.add(normalizedCombo);
-              if (foundSize === null) foundSize = size;
-              if (size === foundSize) {
-                allValidSolutions.push(combo);
-              }
-            }
-          }
-        }
-    
-        if (foundSize !== null) break; // už jsme našli všechna minimální řešení
-      }
-    
-      console.log("✅ Všechna minimální řešení:", allValidSolutions);
-    
-      if (allValidSolutions.length > 0) {
-        this.setState({
-          allValidSolutions: allValidSolutions,
-          currentSolutionIndex: 0
-        }, () => {
-          this.Solution(allValidSolutions[0], allValidSolutions[0]);
-          this.drawGroup(allValidSolutions[0], allValidSolutions[0]);
-        });
+CleanAlgorithm(groups) {
+  let filteredGroups = groups;
+
+  
+  if (this.state.typeMap === 4) {
+    filteredGroups = filterGroups(filteredGroups, this.state.squares, this.state.typeSol);
+    filteredGroups = removeSubsets(filteredGroups);
+  }
+
+
+  filteredGroups.sort((a, b) => b.length - a.length);
+
+  const allRelevant = [];
+  for (let i = 0; i < this.state.squares.length; i++) {
+    for (let j = 0; j < this.state.squares[0].length; j++) {
+      const val = this.state.squares[i][j][0];
+      if ((this.state.typeSol === "SOP" && val === 1) || (this.state.typeSol === "POS" && val === 0)) {
+        allRelevant.push(i + "," + j);
       }
     }
-    
-    
-    
+  }
+
+  const totalGroups = filteredGroups.length;
+  const allValidSolutions = [];
+  const seen = new Set();
+  let foundSize = null;
+
+  for (let size = 1; size <= totalGroups; size++) {
+    const combinations = generateCombinations(filteredGroups, size);
+
+    for (const combo of combinations) {
+      const covered = new Set();
+      for (const group of combo) {
+        for (const cell of group) {
+          covered.add(cell.row + "," + cell.col);
+        }
+      }
+
+      if (allRelevant.every(coord => covered.has(coord))) {
+        const normalizedCombo = combo
+          .map(group =>
+            group.map(cell => `${cell.row},${cell.col}`).sort().join('|')
+          )
+          .sort()
+          .join(';');
+
+        if (!seen.has(normalizedCombo)) {
+          seen.add(normalizedCombo);
+          if (foundSize === null) foundSize = size;
+          if (size === foundSize) {
+            allValidSolutions.push(combo);
+          }
+        }
+      }
+    }
+
+    if (foundSize !== null) break;
+  }
+
+  console.log("✅ Všechna minimální řešení:", allValidSolutions);
+
+  if (allValidSolutions.length > 0) {
+    this.setState({
+      allValidSolutions: allValidSolutions,
+      currentSolutionIndex: 0
+    }, () => {
+      const selected = allValidSolutions[0];
+      this.Solution(selected, selected);
+      this.drawGroup(selected, selected);
+    });
+  }
+}
+
+
   
     Solution(temp, groups) {                         // temp je pole s souřadnicemi správných skupin
       const matrix = this.state.squares;           // hlavní matice
@@ -1389,17 +1405,27 @@ updateInputsAndFunctionFromMap() {
     [8, 10, 14, 12]
   ];
 
-  function removeSubsets(groups) {
-    return groups.filter((group, idx) => {
-      if (group.length === 1) {
-        return true; // Jednobuněčné skupiny nikdy nemažeme
-      }
-      return !groups.some((otherGroup, otherIdx) => {
-        if (idx === otherIdx) return false;
-        return group.every(cell => otherGroup.some(c => c.row === cell.row && c.col === cell.col));
-      });
+function removeSubsets(groups) {
+  return groups.filter((group, idx) => {
+    if (group.length === 1) {
+      return true; // Jednobuněčné skupiny nikdy nemažeme
+    }
+
+    const isCornerGroup =
+      group.length === 4 &&
+      group.some(c => c.row === 0 && c.col === 0) &&
+      group.some(c => c.row === 0 && c.col === 3) &&
+      group.some(c => c.row === 3 && c.col === 0) &&
+      group.some(c => c.row === 3 && c.col === 3);
+    if (isCornerGroup) return true;
+
+    return !groups.some((otherGroup, otherIdx) => {
+      if (idx === otherIdx) return false;
+      return group.every(cell => otherGroup.some(c => c.row === cell.row && c.col === cell.col));
     });
-  } 
+  });
+}
+
   
   function filterGroups(groups, squares, typeSol) {
     const importantValue = (typeSol === "SOP") ? 1 : 0;

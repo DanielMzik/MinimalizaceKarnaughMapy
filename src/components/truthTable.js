@@ -47,19 +47,34 @@ class Permutation extends React.Component { // komponenta, která generuje permu
         />
       );
     }
-    renderTableCol2(j, perm) {
-      const typeMap = this.props.typeMap;
-      //console.log(perm);
-      var html = [];
-      let temp = Math.pow(2, typeMap);
-  
-      for (let i = 0; i < temp; i++) {     // buňky jsou generovány pomocí cyklu, jejich počet je určitě 2^typeMap pro každý sloupec
-        html.push(this.renderTableSquare(perm[i][j], i));
-      }
-      return html;
+renderTableCol2(j, perm) {
+  const typeMap = this.props.typeMap;
+
+  let html = [];
+
+  if (typeMap === 4) {
+    for (let i = 0; i < 16; i++) {
+      // B C A D => dekódováno z indexu i
+      const b = (i >> 3) & 1;
+      const c = (i >> 2) & 1;
+      const a = (i >> 1) & 1;
+      const d = i & 1;
+
+      const reordered = [b, c, a, d]; // [B, C, A, D]
+      html.push(this.renderTableSquare(reordered[j], i));
     }
+  } else {
+    const temp = Math.pow(2, typeMap);
+    for (let i = 0; i < temp; i++) {
+      html.push(this.renderTableSquare(perm[i][j], i));
+    }
+  }
+
+  return html;
+}
+
   
-    renderTableCol(j, perm) {     //colonna per unità binaria (esempio in decimale -> centinaia, decina, unità ecc)
+    renderTableCol(j, perm) { 
       return (
         <div className="table-col" key={j}>
           {this.renderTableCol2(j, perm) // tato funkce skutečně generuje (vykresluje) buňky
@@ -117,56 +132,55 @@ class TableValSelection extends React.Component { // komponenta, která generuje
       );
     }
   
-    renderTableCol() {
-      const typeMap = this.props.typeMap;
-      const squares = this.props.squares;
-      let a = [];
-      let r = typeMap;
-      let c = typeMap;
-      if (typeMap === 3) {
-        c = 4;
-        r = 2;
-      }
-      let key = 0;
-    
-      const customOrder4 = [
-        [0, 2, 6, 4],
-        [1, 3, 7, 5],
-        [9, 11, 15, 13],
-        [8, 10, 14, 12]
-      ];
-    
-      if (typeMap === 4) {
-        // === 4 proměnné: správné pořadí 0-15 ===
-        for (let targetDecimal = 0; targetDecimal <= 15; targetDecimal++) {
-          for (let row = 0; row < 4; row++) {
-            for (let col = 0; col < 4; col++) {
-              const currentDecimal = customOrder4[row][col];
-              if (currentDecimal === targetDecimal) {
-                a.push(this.renderSelectionButton(row, col, key++));
-              }
-            }
-          }
-        }
-      } else {
-        // === staré chování pro 2 a 3 proměnné ===
-        for (let i = 0; i < c; i++) {
-          let l;
-          if (i === 2) l = 3;
-          else if (i === 3) l = 2;
-          else l = i;
-          for (let j = 0; j < r; j++) {
-            let k;
-            if (j % r === 2) k = 3;
-            else if (j % r === 3) k = 2;
-            else k = j;
-            a.push(this.renderSelectionButton(k, l, key++));
-          }
-        }
-      }
-    
-      return a;
+renderTableCol() {
+  const typeMap = this.props.typeMap;
+  const squares = this.props.squares;
+  let a = [];
+  let r = typeMap;
+  let c = typeMap;
+  if (typeMap === 3) {
+    c = 4;
+    r = 2;
+  }
+  let key = 0;
+
+  if (typeMap === 4) {
+    for (let i = 0; i < 16; i++) {
+      // B C A D dekódované z indexu i
+      const b = (i >> 3) & 1;
+      const c = (i >> 2) & 1;
+      const aBit = (i >> 1) & 1;
+      const d = i & 1;
+
+      const indexMap = {
+        "00": 0, "01": 1, "11": 2, "10": 3
+      };
+
+      const row = indexMap[`${aBit}${d}`];
+      const col = indexMap[`${b}${c}`];
+
+      a.push(this.renderSelectionButton(row, col, key++));
     }
+  } else {
+    // === staré chování pro 2 a 3 proměnné ===
+    for (let i = 0; i < c; i++) {
+      let l;
+      if (i === 2) l = 3;
+      else if (i === 3) l = 2;
+      else l = i;
+      for (let j = 0; j < r; j++) {
+        let k;
+        if (j % r === 2) k = 3;
+        else if (j % r === 3) k = 2;
+        else k = j;
+        a.push(this.renderSelectionButton(k, l, key++));
+      }
+    }
+  }
+
+  return a;
+}
+
   
     render() {
       return <div className="table-col-selButton"> {this.renderTableCol()} </div>;
