@@ -39,7 +39,7 @@ export default class OutputMap extends React.Component {
   }
 
   renderMapHead(check, a, className) {
-    const alp = ["A", "B", "C", "D"];
+    const alp = ["B", "C", "A", "D"];
     if (check) {
       return <TableSquare value={a} key={a} className={className} />;
     } else {

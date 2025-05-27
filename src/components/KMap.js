@@ -243,11 +243,11 @@ setEquationType = (type) => {
       const squares = this.state.squares;
     
       if (squares[i][j][0] === 1) {
-        squares[i][j][0] = 0;
-      } else if (squares[i][j][0] === 0) {
         squares[i][j][0] = 'X';
-      } else if (squares[i][j][0] === 'X') {
+      } else if (squares[i][j][0] === 0) {
         squares[i][j][0] = 1;
+      } else if (squares[i][j][0] === 'X') {
+        squares[i][j][0] = 0;
       }
     
       this.clearDrawings();  // <<< smažeme staré zvýraznění
@@ -303,7 +303,7 @@ updateInputsAndFunctionFromMap() {
     
 
     getFunctionLabel() {
-      const allVars = ['a', 'b', 'c', 'd'];
+      const allVars = ['d', 'c', 'b', 'a'];
       const selectedVars = allVars.slice(0, this.state.typeMap);
       return `f(${selectedVars.join(',')}) =`;
     }
@@ -921,130 +921,110 @@ CleanAlgorithm(groups) {
 
 
   
-    Solution(temp, groups) {                         // temp je pole s souřadnicemi správných skupin
-      const matrix = this.state.squares;           // hlavní matice
-      var varNames = ["A", "B", "C", "D"];               // pole s názvy proměnných matice
-      var solution="";                              // řetězec pro výpočet řešení jedné skupiny
-      var vectorSol=[];                              // každá položka je řešení jedné skupiny
-      var k, j, t;
-      // k je index pro procházení pole varNames, j je index pro procházení souřadnic skupin, t je index pro procházení binárních souřadnic
-      var refRow, refCol;                    // tyto dvě proměnné obsahují řádek a sloupec prvního prvku skupiny, který je výchozím bodem
-      var flag;                                    // pomocná proměnná (sentinel)
-      var coord;                                  // proměnná, která obsahuje binární souřadnici, se kterou se pracuje
-      var elementsInRow;
-      var solutionType=this.state.typeSol;
-      for (let i = 0; i < temp.length; i++) {
-  
-        if (temp[i].length > 0) {
-          k = 0;
-          refRow = groups[i][0].row;              //extrakce souřadnic referenčního bodu každé skupiny
-          refCol = groups[i][0].col;
-  
-          elementsInRow = 0;
-          while (elementsInRow < groups[i].length && groups[i][elementsInRow].row === refRow)  //počítá, kolik prvků je v jednom řádku (využívá se při určení počtu sloupců)
-          {
-            elementsInRow++;
-          }
-  
-          //ZAČÁTEK KONTROLY ŘÁDKU
-          t = 0;
-          coord = matrix[refRow][refCol][1];  // coord obsahuje binární souřadnici ve sloupci referenčního bodu
-          while (t < coord.length) {
-            j = 1;
-            flag = true;
-            while (j < groups[i].length && groups[i][j].row === refRow) {       // dokud jsou prvky ve stejném řádku
-              if (coord.charAt(t) !== matrix[refRow][groups[i][j].col][1].charAt(t)) {  // porovná jednotlivé znaky binárních souřadnic ve sloupcích prvků skupiny
-                flag = false;                                               // pokud nejsou stejné, proměnná se nezohlední a cyklus se ukončí
-                break;
-              }
-              j++;
-            }
-            if (flag) {                        //řešení se aktualizuje pouze tehdy, pokud jsou všechny znaky stejné
-              if(solutionType==="SOP")                //tvar SOP
-              {
-                if (coord.charAt(t) === "0") {
-                  solution += "'" + varNames[k];
-                }
-                else{
-                  solution += varNames[k];
-                }
-              }
-              else{                               //tvar POS
-                if (coord.charAt(t) === "0") {
-                  solution += varNames[k];
-                }
-                else{
-                  solution += "'" + varNames[k];
-                }
-                solution += "+";
-              }
-            }
-            k++;
-            t++;
-          }
-  
-          //ZAČÁTEK KONTROLY ŘÁDKU
-          t = 0;
-          coord = matrix[refRow][refCol][2];    // coord obsahuje binární souřadnici řádku výchozího bodu
-          while (t < coord.length) {
-            j = elementsInRow;
-            flag = true;
-            while (j < groups[i].length && groups[i][j].col === refCol) {   // dokud jsou prvky ve stejném sloupci
-              if (coord.charAt(t) !== matrix[groups[i][j].row][refCol][2].charAt(t)) { // porovnává jednotlivé znaky binárních souřadnic řádků prvků náležících do skupiny
-                flag = false;                                     // pokud jsou znaky různé, proměnná se nepočítá a cyklus se přeruší
-                break;
-              }
-              j += elementsInRow;
-            }
-            if (flag) {                        // řešení se aktualizuje pouze tehdy, pokud jsou všechny znaky stejné
-              if(solutionType==="SOP")                 //tvar SOP
-              {
-                if (coord.charAt(t) === "0") {
-                  solution +=  "'" + varNames[k];
-                }
-                else{
-                  solution += varNames[k];
-                }
-              }
-              else{                               //tvar POS
-                if (coord.charAt(t) === "0") {
-                  solution += varNames[k];
-                }
-                else{
-                  solution += "'" + varNames[k];
-                }
-                solution += "+";
-              }
-            }
-            k++;
-            t++;
-          }
-          if(solutionType==="POS")     // v případě tvaru POS bude na konci řetězce znak "+" a ten je potřeba odstranit
-          {
-            solution=solution.substr(0,solution.length-1);
-          }
-          vectorSol.push(solution);
-          solution="";
-        }
+Solution(temp, groups) {
+  const matrix = this.state.squares;
+  var varNames = ["C", "B", "D", "A"];  // podle tvého požadavku zachováno
+  var vectorSol = [];
+  var solutionType = this.state.typeSol;
+
+  for (let i = 0; i < temp.length; i++) {
+    if (temp[i].length > 0) {
+      let k = 0;
+      let refRow = groups[i][0].row;
+      let refCol = groups[i][0].col;
+
+      let elementsInRow = 0;
+      while (elementsInRow < groups[i].length && groups[i][elementsInRow].row === refRow) {
+        elementsInRow++;
       }
-  
-      if (vectorSol[0] === "" || !vectorSol[0])   // pokud je řešení prázdný řetězec, znamená to, že matice obsahuje pouze samé 0 nebo samé 1
-      {
-        
-        if (matrix[0][0][0] === 0) {
-          vectorSol[0]="0";
+
+      let termParts = [];
+
+      // Kontrola řádku (souřadnice sloupce)
+      let t = 0;
+      let coord = matrix[refRow][refCol][1];
+      while (t < coord.length) {
+        let j = 1;
+        let flag = true;
+        while (j < groups[i].length && groups[i][j].row === refRow) {
+          if (coord.charAt(t) !== matrix[refRow][groups[i][j].col][1].charAt(t)) {
+            flag = false;
+            break;
+          }
+          j++;
         }
-        else {
-          vectorSol[0]="1";
+        if (flag) {
+          if (solutionType === "SOP") {
+            if (coord.charAt(t) === "0") termParts.push("'" + varNames[k]);
+            else termParts.push(varNames[k]);
+          } else {
+            if (coord.charAt(t) === "0") termParts.push(varNames[k]);
+            else termParts.push("'" + varNames[k]);
+          }
         }
+        k++;
+        t++;
       }
-      console.log("Expression sent to LogicCircuitGo:", vectorSol.join(" + ")); // DEBUG výstup
-     // === Uložení minimalizovaného výrazu do state pro LogicCircuitGo
-      this.setState({
-      logicExpression: vectorSol.join(" + ")  // např. ["A'B", "CD'"] → "A'B + CD'"
-    }); 
-      this.drawSolution(vectorSol);
+
+      // Kontrola sloupce (souřadnice řádku)
+      t = 0;
+      coord = matrix[refRow][refCol][2];
+      while (t < coord.length) {
+        let j = elementsInRow;
+        let flag = true;
+        while (j < groups[i].length && groups[i][j].col === refCol) {
+          if (coord.charAt(t) !== matrix[groups[i][j].row][refCol][2].charAt(t)) {
+            flag = false;
+            break;
+          }
+          j += elementsInRow;
+        }
+        if (flag) {
+          if (solutionType === "SOP") {
+            if (coord.charAt(t) === "0") termParts.push("'" + varNames[k]);
+            else termParts.push(varNames[k]);
+          } else {
+            if (coord.charAt(t) === "0") termParts.push(varNames[k]);
+            else termParts.push("'" + varNames[k]);
+          }
+        }
+        k++;
+        t++;
+      }
+
+      // Abecední řazení termů podle písmen (A, B, C, D)
+      termParts.sort((a, b) => {
+        const order = ['A', 'B', 'C', 'D'];
+        // vezmeme písmeno bez apostrofu
+        const aVar = a.replace("'", "");
+        const bVar = b.replace("'", "");
+        return order.indexOf(aVar) - order.indexOf(bVar);
+      });
+
+      let solution = termParts.join("");
+
+      if (solutionType === "POS") {
+        solution = solution.replace(/\+$/, "");
+      }
+
+      vectorSol.push(solution);
     }
+  }
+
+  if (vectorSol[0] === "" || !vectorSol[0]) {
+    if (matrix[0][0][0] === 0) {
+      vectorSol[0] = "0";
+    } else {
+      vectorSol[0] = "1";
+    }
+  }
+
+  this.setState({
+    logicExpression: vectorSol.join(" + ")
+  });
+  this.drawSolution(vectorSol);
+}
+
 
     prevSolution() {
       const { currentSolutionIndex, allValidSolutions } = this.state;

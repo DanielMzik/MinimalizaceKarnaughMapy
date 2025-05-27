@@ -59,7 +59,7 @@ export default class Map extends React.Component {
         );
       else {
         let temp = [];
-        let alp = ["A", "B", "C", "D"];
+        let alp = ["B", "C", "A", "D"];
         let flag = false;
         let i = 0
         for (; i < typeMap; i++) {
@@ -86,7 +86,7 @@ export default class Map extends React.Component {
   
     renderHeader() {
       const typeMap = this.props.typeMap;
-      let string = ["00", "01", "11", "10"];
+      let string = ["00", "10", "11", "01"];
       let t = typeMap;
       let a = [];
       if (typeMap === 3)
