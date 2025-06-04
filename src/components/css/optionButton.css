@@ -14,6 +14,28 @@
     color: black;
 }
 
+.optionSection {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;         /* mezera mezi skupinami */
+    margin-bottom: 10px;
+}
+
+.subOptionBlock {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 160px;       /* šířka jednoho bloku */
+}
+
+.centeredBlock {
+  display: flex;
+  justify-content: center;
+  margin-left: 60px; /* posune celý blok doprava */
+}
+
+
+
 .buttonType,
 .buttonSettings,
 .elaborate,

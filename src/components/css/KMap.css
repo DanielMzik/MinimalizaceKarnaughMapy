@@ -137,9 +137,11 @@
   max-width: 100%;
 }
 
-.kMapOutput, .truthTable, .nameTab {
+.kMapOutput, .nameTab {
   display: none;
 }
+
+
 
 
 
