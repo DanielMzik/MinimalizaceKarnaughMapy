@@ -105,17 +105,26 @@ class TableH extends React.Component {    // komponenta, která generuje hlavič
       );
     }
   
-    renderTableRow() {
-      const typeMap = this.props.typeMap;
-      let alphabet = ["D", "C", "B", "A"];
-      let a = [];
-      let i = 0
-      for (; i < typeMap; i++)
-        a.push(this.renderTableHead(alphabet[i], i));
-      a.push(this.renderTableHead("f", i + 1));
-      return a;
-  
-    }
+renderTableRow() {
+  const typeMap = this.props.typeMap;
+  let alphabet;
+
+  if (typeMap === 2) {
+    alphabet = ["B", "A"];      // pro 2 proměnné
+  } else if (typeMap === 3) {
+    alphabet = ["C", "B", "A"]; // pro 3 proměnné
+  } else {
+    alphabet = ["D", "C", "B", "A"]; // pro 4 proměnné (nebo jiné)
+  }
+
+  let a = [];
+  let i = 0;
+  for (; i < typeMap; i++)
+    a.push(this.renderTableHead(alphabet[i], i));
+  a.push(this.renderTableHead("f", i + 1));
+  return a;
+}
+
     render() {
       return <div className="tableHead" key={-1}> {this.renderTableRow()} </div>;
     }
@@ -128,6 +137,7 @@ class TableValSelection extends React.Component { // komponenta, která generuje
         <SelectionButton
           value={this.props.squares[i][j][0]}
           key={k}
+          onClick={() => this.props.onClick(i, j)}
         />
       );
     }

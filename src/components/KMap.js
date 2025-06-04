@@ -31,11 +31,13 @@ export default class KarnaughMap extends React.Component {
         
       };
     }
+    
 
     // Funkce pro změnu zobrazené rovnice
 setEquationType = (type) => {
-  if (this.state.EquationType === type) return; 
-  const { squares } = this.state;
+  if (this.state.EquationType === type) return;
+
+  const { squares, typeSol } = this.state;
 
   // Přepni hodnoty 1 <-> 0, 'X' nech beze změny
   const newSquares = squares.map(row => 
@@ -49,14 +51,16 @@ setEquationType = (type) => {
 
   this.reset();
 
-  // Přepni typ výrazu i výpočtu
+
   this.setState({ 
     EquationType: type,
     squares: newSquares
   }, () => {
-    this.updateInputsAndFunctionFromMap();
+    this.updateInputsAndFunctionFromMap(); // znovu vytvoří minterm/maxterm seznam
   });
 }
+
+
 
     
   
@@ -124,11 +128,13 @@ setEquationType = (type) => {
         }
       
       this.reset();
-      this.setState({
-        squares: squares,
-        inputMinterms: "",   
-        inputDontCares: "" 
-      });
+this.setState({
+  squares: squares,
+  inputMinterms: "",   
+  inputDontCares: "" 
+}, () => {
+  this.updateInputsAndFunctionFromMap(); // automatický update rovnice
+});
     }
   
     reset(){   // resetovací metoda, která znovu nastaví výchozí nastavení pro nový výpočet
@@ -153,9 +159,7 @@ setEquationType = (type) => {
         $("#sol").html("");                 // odstraní řešení
         $("#cost").html("");
         $(".Solution").hide();
-        $(".kMapOutput").hide();
-        $(".truthTable").hide();     
-        $(".nameTab").hide();
+        $(".kMapOutput").hide();    
         $(".solutionSwitcher").hide();        
         $(".Solution").css("left","720px");
     }
@@ -268,6 +272,9 @@ updateInputsAndFunctionFromMap() {
   const minterms = [];
   const dontCares = [];
 
+  // Co se má zapsat do rovnice? 1 (pro Dis) nebo 0 (pro Kon)
+  const importantValue = this.state.EquationType === "Dis" ? 1 : 0;
+
   for (let i = 0; i < squares.length; i++) {
     for (let j = 0; j < squares[0].length; j++) {
       let decimal;
@@ -278,18 +285,12 @@ updateInputsAndFunctionFromMap() {
         decimal = parseInt(binary, 2);
       }
 
-      if (this.state.typeSol === "SOP") {
-        if (squares[i][j][0] === 1) {
-          minterms.push(decimal);
-        } else if (squares[i][j][0] === 'X') {
-          dontCares.push(decimal);
-        }
-      } else if (this.state.typeSol === "POS") {
-        if (squares[i][j][0] === 1) {
-          minterms.push(decimal);
-        } else if (squares[i][j][0] === 'X') {
-          dontCares.push(decimal);
-        }
+      const cellValue = squares[i][j][0];
+
+      if (cellValue === importantValue) {
+        minterms.push(decimal);
+      } else if (cellValue === 'X') {
+        dontCares.push(decimal);
       }
     }
   }
@@ -300,99 +301,100 @@ updateInputsAndFunctionFromMap() {
   });
 }
 
-    
 
-    getFunctionLabel() {
-      const allVars = ['d', 'c', 'b', 'a'];
-      const selectedVars = allVars.slice(0, this.state.typeMap);
-      return `f(${selectedVars.join(',')}) =`;
-    }
 
-    applyExpressionInputs() {
-      const maxRange = Math.pow(2, this.state.typeMap) - 1;
-      const val = this.state.typeSol === "SOP" ? 1 : 0;  // základní hodnota pro klikání, ale pozor, jinak budeme generovat mapu
-    
-      const validFormat = /^[0-9\s,]*$/;
-    
-      if (
-        (this.state.inputMinterms && !validFormat.test(this.state.inputMinterms)) ||
-        (this.state.inputDontCares && !validFormat.test(this.state.inputDontCares))
-      ) {
-        alert("Chyba: Vstupy musí obsahovat pouze čísla oddělená čárkami.");
-        return;
+getFunctionLabel() {
+  let selectedVars = [];
+
+  switch (this.state.typeMap) {
+    case 2:
+      selectedVars = ['b', 'a'];
+      break;
+    case 3:
+      selectedVars = ['c', 'b', 'a'];
+      break;
+    case 4:
+      selectedVars = ['d', 'c', 'b', 'a'];
+      break;
+    default:
+      selectedVars = ['a'];
+  }
+
+  return `f(${selectedVars.join(',')}) =`;
+}
+
+
+applyExpressionInputs() {
+  const maxRange = Math.pow(2, this.state.typeMap) - 1;
+
+  const validFormat = /^[0-9\s,]*$/;
+
+  if (
+    (this.state.inputMinterms && !validFormat.test(this.state.inputMinterms)) ||
+    (this.state.inputDontCares && !validFormat.test(this.state.inputDontCares))
+  ) {
+    alert("Chyba: Vstupy musí obsahovat pouze čísla oddělená čárkami.");
+    return;
+  }
+
+  const minterms = this.state.inputMinterms
+    .split(',')
+    .map(n => parseInt(n.trim()))
+    .filter(n => !isNaN(n));
+
+  const dontCares = this.state.inputDontCares
+    .split(',')
+    .map(n => parseInt(n.trim()))
+    .filter(n => !isNaN(n));
+
+  if (minterms.some(n => n < 0 || n > maxRange)) {
+    alert(`Chyba: Čísla musí být v rozsahu 0 až ${maxRange}.`);
+    return;
+  }
+
+  if (dontCares.some(n => n < 0 || n > maxRange)) {
+    alert(`Chyba: Čísla musí být v rozsahu 0 až ${maxRange}.`);
+    return;
+  }
+
+  const duplicates = minterms.filter(n => dontCares.includes(n));
+  if (duplicates.length > 0) {
+    alert("Chyba: Některá čísla jsou stejná v mintermech a don't care.");
+    return;
+  }
+
+  const squares = this.getMatrixSquare(this.state.typeMap);
+  const perm = this.getMatrixPerm(this.state.typeMap);
+  const map = this.setCoord(squares, perm, this.state.typeMap);
+
+  // === Inicializuj mapu na základní hodnotu ===
+  const baseVal = this.state.EquationType === "Dis" ? 0 : 1;
+  const onVal = this.state.EquationType === "Dis" ? 1 : 0;
+
+  for (let i = 0; i < map.length; i++) {
+    for (let j = 0; j < map[0].length; j++) {
+      let decimal;
+      if (this.state.typeMap === 4) {
+        decimal = customGrayCode4[i][j];
+      } else {
+        const binary = map[i][j][1] + map[i][j][2];
+        decimal = parseInt(binary, 2);
       }
-    
-      const minterms = this.state.inputMinterms
-        .split(',')
-        .map(n => parseInt(n.trim()))
-        .filter(n => !isNaN(n));
-    
-      const dontCares = this.state.inputDontCares
-        .split(',')
-        .map(n => parseInt(n.trim()))
-        .filter(n => !isNaN(n));
-    
-      if (minterms.some(n => n < 0 || n > maxRange)) {
-        alert(`Chyba: Čísla musí být v rozsahu 0 až ${maxRange}.`);
-        return;
+
+      if (minterms.includes(decimal)) {
+        map[i][j][0] = onVal;
+      } else if (dontCares.includes(decimal)) {
+        map[i][j][0] = "X";
+      } else {
+        map[i][j][0] = baseVal;
       }
-    
-      if (dontCares.some(n => n < 0 || n > maxRange)) {
-        alert(`Chyba: Čísla musí být v rozsahu 0 až ${maxRange}.`);
-        return;
-      }
-    
-      const duplicates = minterms.filter(n => dontCares.includes(n));
-      if (duplicates.length > 0) {
-        alert("Chyba: Některá čísla jsou stejná v mintermech a don't care.");
-        return;
-      }
-    
-      const squares = this.getMatrixSquare(this.state.typeMap);
-      const perm = this.getMatrixPerm(this.state.typeMap);
-      const map = this.setCoord(squares, perm, this.state.typeMap);
-    
-      // === Velká změna: Nejprve všechno nastavím podle režimu ===
-      const baseVal = (this.state.typeSol === "SOP") ? 0 : 1;
-    
-      for (let i = 0; i < map.length; i++) {
-        for (let j = 0; j < map[0].length; j++) {
-          map[i][j][0] = baseVal;
-        }
-      }
-    
-      // === Pak přepíšu hodnoty podle minterms a dontCares ===
-      for (let i = 0; i < map.length; i++) {
-        for (let j = 0; j < map[0].length; j++) {
-          let decimal;
-          if (this.state.typeMap === 4) {
-            decimal = customGrayCode4[i][j];
-          } else {
-            const binary = map[i][j][1] + map[i][j][2];
-            decimal = parseInt(binary, 2);
-          }
-    
-          if (this.state.typeSol === "SOP") {
-            if (minterms.includes(decimal)) {
-              map[i][j][0] = 1;
-            } else if (dontCares.includes(decimal)) {
-              map[i][j][0] = "X";
-            }
-            // jinak 0 už tam je
-          } else if (this.state.typeSol === "POS") {
-            if (minterms.includes(decimal)) {
-              map[i][j][0] = 0; // POZOR: v POS když číslo je zadané, znamená 0
-            } else if (dontCares.includes(decimal)) {
-              map[i][j][0] = "X"; // don't care taky změním
-            }
-            // jinak 1 už tam je
-          }
-        }
-      }
-    
-      this.reset();
-      this.setState({ squares: map });
     }
+  }
+
+  this.reset();
+  this.setState({ squares: map });
+}
+
     
 
     
@@ -849,10 +851,11 @@ updateInputsAndFunctionFromMap() {
 CleanAlgorithm(groups) {
   let filteredGroups = groups;
 
-  
-  if (this.state.typeMap === 4) {
+  if (this.state.typeMap === 4 || this.state.typeMap === 3 || this.state.typeMap === 2) {
     filteredGroups = filterGroups(filteredGroups, this.state.squares, this.state.typeSol);
-    filteredGroups = removeSubsets(filteredGroups);
+    console.log("Po filterGroups:", filteredGroups);
+    filteredGroups = removeSubsets(filteredGroups, this.state.typeMap);
+    console.log("Po removeSubsets:", filteredGroups);
   }
 
 
@@ -923,7 +926,13 @@ CleanAlgorithm(groups) {
   
 Solution(temp, groups) {
   const matrix = this.state.squares;
-  var varNames = ["C", "B", "D", "A"];  // podle tvého požadavku zachováno
+  // Definuj varNames podle počtu proměnných (typeMap)
+  const varNamesMap = {
+    2: ["B", "A"],
+    3: ["C", "B", "A"],
+    4: ["C", "B", "D", "A"]
+  };
+  var varNames = varNamesMap[this.state.typeMap] || ["A", "B", "C", "D"];
   var vectorSol = [];
   var solutionType = this.state.typeSol;
 
@@ -1001,7 +1010,10 @@ Solution(temp, groups) {
         return order.indexOf(aVar) - order.indexOf(bVar);
       });
 
-      let solution = termParts.join("");
+      let solution = (solutionType === "SOP")
+      ? termParts.join("")
+      : termParts.join("+");
+
 
       if (solutionType === "POS") {
         solution = solution.replace(/\+$/, "");
@@ -1019,9 +1031,13 @@ Solution(temp, groups) {
     }
   }
 
-  this.setState({
-    logicExpression: vectorSol.join(" + ")
-  });
+  let formattedVectorSol = vectorSol.map(term => `(${term})`);
+
+this.setState({
+  logicExpression: this.state.typeSol === "SOP"
+    ? formattedVectorSol.join(" + ")
+    : formattedVectorSol.join(" · ")
+});
   this.drawSolution(vectorSol);
 }
 
@@ -1267,6 +1283,19 @@ Solution(temp, groups) {
 />
 </div>
 
+<div className="optionsBar">
+  <OptionButton
+    squares={values}
+    typeMap={typeMap}
+    typeSol={typeSol}
+    onClick={() => this.Algorithm(values)}
+    setTypeSol={(val) => this.setTypeSol(val)}
+    setMatrixSquare={(val) => this.setMatrixSquare(val)}
+    setTypeMap={(val) => this.setTypeMap(val)}
+    setEquationType={this.setEquationType}
+  />
+</div>
+
 
   {/* Dva prvky vedle sebe - mapa a ovládací menu */}
   <div className="mapAndOptions">
@@ -1280,16 +1309,18 @@ Solution(temp, groups) {
       />
     </div>
 
-    <OptionButton
-      squares={values}
-      typeMap={typeMap}
-      typeSol={typeSol}
-      onClick={() => this.Algorithm(values)}
-      setTypeSol={(val) => this.setTypeSol(val)}
-      setMatrixSquare={(val) => this.setMatrixSquare(val)}
-      setTypeMap={(val) => this.setTypeMap(val)}
-      setEquationType={this.setEquationType}
-    />
+      <div className="truthTableContainer">
+    <p className="nameTab" style={{ display: "block" }}>Pravdivostní tabulka</p>
+    <div className="truthTable" style={{ display: "block" }}>
+      <TruthTable
+        squares={values}
+        typeMap={typeMap}
+        perm={perm}
+        onClick={(i, j) => this.handleClick(i, j)}
+        setRowOrColCell={(i, j, k, val) => this.setRowOrColCell(i, j, k, val)}
+      />
+    </div>
+  </div>
   </div>
 </div>
 <div className="kMapOutput">
@@ -1335,18 +1366,6 @@ Solution(temp, groups) {
                 type={this.state.typeSol}
               />
             </div>          
-            {/* === Pravdivostní tabulka === */}
-          <div className="bodyPage" key={i++}>
-            <p className="nameTab"> Pravdivostní tabulka </p>
-            <div className="truthTable" key={i++}>
-            <TruthTable
-            squares={values}
-            typeMap={typeMap}
-            perm={perm}
-            />
-            </div>
-          </div>
-    
         </div>
       );
     }
@@ -1385,26 +1404,58 @@ Solution(temp, groups) {
     [8, 10, 14, 12]
   ];
 
-function removeSubsets(groups) {
+function removeSubsets(groups, typeMap) {
   return groups.filter((group, idx) => {
+    // Pokud je velikost skupiny 1, ponech ji pouze pokud ji nepokrývá větší skupina
     if (group.length === 1) {
-      return true; // Jednobuněčné skupiny nikdy nemažeme
+      const cell = group[0];
+      const isCovered = groups.some((otherGroup, otherIdx) => {
+        if (otherIdx === idx) return false;
+        return otherGroup.length > 1 && otherGroup.some(c => c.row === cell.row && c.col === cell.col);
+      });
+      return !isCovered;
     }
 
-    const isCornerGroup =
-      group.length === 4 &&
-      group.some(c => c.row === 0 && c.col === 0) &&
-      group.some(c => c.row === 0 && c.col === 3) &&
-      group.some(c => c.row === 3 && c.col === 0) &&
-      group.some(c => c.row === 3 && c.col === 3);
-    if (isCornerGroup) return true;
+    // Speciální případ rohových skupin (pro 4x4, 2x4 a 2x2 mapy)
+    if (typeMap === 4) {
+      const isCornerGroup =
+        group.length === 4 &&
+        group.some(c => c.row === 0 && c.col === 0) &&
+        group.some(c => c.row === 0 && c.col === 3) &&
+        group.some(c => c.row === 3 && c.col === 0) &&
+        group.some(c => c.row === 3 && c.col === 3);
+      if (isCornerGroup) return true;
+    } else if (typeMap === 3) {
+      const isCornerGroup =
+        group.length === 4 &&
+        group.some(c => c.row === 0 && c.col === 0) &&
+        group.some(c => c.row === 0 && c.col === 3) &&
+        group.some(c => c.row === 1 && c.col === 0) &&
+        group.some(c => c.row === 1 && c.col === 3);
+      if (isCornerGroup) return true;
+    } else if (typeMap === 2) {
+      const isCornerGroup =
+        group.length === 4 &&
+        group.some(c => c.row === 0 && c.col === 0) &&
+        group.some(c => c.row === 0 && c.col === 1) &&
+        group.some(c => c.row === 1 && c.col === 0) &&
+        group.some(c => c.row === 1 && c.col === 1);
+      if (isCornerGroup) return true;
+    }
 
+    // Odstranit pouze pokud je skupina přísně podmnožinou jiné větší skupiny
     return !groups.some((otherGroup, otherIdx) => {
       if (idx === otherIdx) return false;
-      return group.every(cell => otherGroup.some(c => c.row === cell.row && c.col === cell.col));
+      if (otherGroup.length <= group.length) return false;
+
+      const isSubset = group.every(cell =>
+        otherGroup.some(c => c.row === cell.row && c.col === cell.col)
+      );
+      return isSubset;
     });
   });
 }
+
 
   
   function filterGroups(groups, squares, typeSol) {

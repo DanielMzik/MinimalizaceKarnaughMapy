@@ -48,41 +48,48 @@ export default class Map extends React.Component {
       return a;
     }
     //metody pro vykreslení prvků po stranách mapy
-    renderMapHead(check, a, className) {
-      const typeMap = this.props.typeMap;
-      if (check)
-        return (
-          <TableSquare
-            value={a}
-            key={a}
-            className={className} />
-        );
-      else {
-        let temp = [];
-        let alp = ["B", "C", "A", "D"];
-        let flag = false;
-        let i = 0
-        for (; i < typeMap; i++) {
-          if ((typeMap !== 2 && i === 2) || (typeMap === 2 && i === 1)) {
-            temp.push(<hr key={"hr"} />);
-            flag = true;
-          }
-          if (!flag)
-            temp.push(<div className="mapVariableTop" key={i} >{alp[i]}</div>);
-          else
-            temp.push(<div className="mapVariableBot" key={i} >{alp[i]}</div>);
+renderMapHead(check, a, className) {
+  const typeMap = this.props.typeMap;
   
-        }
-  
-        return (
-          <TableSquare
-            value={temp}
-            key={++i}
-            className={className} />
-        );
+  // Dynamicky nastavíme seznam proměnných
+  let alp;
+  if (typeMap === 2) {
+    alp = ["B", "A"]; // Pokud jsou 2 proměnné
+  } else {
+    alp = ["B", "C", "A", "D"]; // Pokud jsou 3 nebo 4 proměnné
+  }
+
+  if (check) {
+    return (
+      <TableSquare
+        value={a}
+        key={a}
+        className={className} />
+    );
+  } else {
+    let temp = [];
+    let flag = false;
+    let i = 0;
+    for (; i < typeMap; i++) {
+      if ((typeMap !== 2 && i === 2) || (typeMap === 2 && i === 1)) {
+        temp.push(<hr key={"hr"} />);
+        flag = true;
       }
-  
+      if (!flag)
+        temp.push(<div className="mapVariableTop" key={i}>{alp[i]}</div>);
+      else
+        temp.push(<div className="mapVariableBot" key={i}>{alp[i]}</div>);
     }
+
+    return (
+      <TableSquare
+        value={temp}
+        key={++i}
+        className={className} />
+    );
+  }
+}
+
   
     renderHeader() {
       const typeMap = this.props.typeMap;
@@ -106,7 +113,7 @@ export default class Map extends React.Component {
   
     renderCol() {
       const typeMap = this.props.typeMap;
-      let string = ["00", "01", "11", "10"];
+      let string = ["00", "10", "11", "01"];
       let t = typeMap;
       let a = [];
       if (typeMap === 2 || typeMap === 3) {

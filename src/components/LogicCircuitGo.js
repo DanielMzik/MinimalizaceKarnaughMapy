@@ -88,6 +88,22 @@ const LogicCircuitGo = ({ expression, type = "SOP" }) => {
       )
     );
 
+diagram.nodeTemplateMap.add("CONST",
+  $(go.Node, "Auto",
+    $(go.Shape, "RoundedRectangle", {
+      fill: "#ddd", stroke: null
+    }),
+    $(go.TextBlock, {
+      margin: 6,
+      font: "bold 12px sans-serif",
+      stroke: "#000"
+    },
+    new go.Binding("text", "label"))  // ← tady oprava
+  )
+);
+
+
+
     const normalized = normalizeExpression(expression);
     const { nodeDataArray, linkDataArray } = parseExpression(normalized);
     console.log("Parsed Expression: ", normalized);
@@ -104,36 +120,78 @@ const LogicCircuitGo = ({ expression, type = "SOP" }) => {
     const nodeDataArray = [];
     const linkDataArray = [];
 
-    if (!expr || expr.trim() === "" || expr.trim() === "0" || expr.trim() === "1") {
-      return { nodeDataArray, linkDataArray };
-    }
+if (!expr || expr.trim() === "") {
+  return { nodeDataArray, linkDataArray };
+}
+
+const trimmedExpr = expr.replace(/[\s()]/g, ""); // odstraní mezery a závorky
+if (trimmedExpr === "1" || trimmedExpr === "0") {
+
+  nodeDataArray.push(
+    { key: "CONST", category: "CONST", label: trimmedExpr },  // ← tady změna: `label` místo `text`
+    { key: "BULB", category: "BULB" }
+  );
+  linkDataArray.push({ from: "CONST", to: "BULB" });
+
+  return { nodeDataArray, linkDataArray };
+}
+
+
 
     const terms = expr.split(type === "SOP" ? '+' : '·').map(term => term.trim());
     const mainGate = type === "SOP" ? "OR" : "AND";
     const subGate = type === "SOP" ? "AND" : "OR";
 
-    terms.forEach((term, termIndex) => {
-      const gateId = `${subGate}${termIndex}`;
-      nodeDataArray.push({ key: gateId, category: subGate });
+terms.forEach((term, termIndex) => {
+  const literals = term.match(/([A-Z]'+|[A-Z])/g);
+  if (!literals || literals.length === 0) return;
 
-      const literals = term.match(/([A-Z]'+|[A-Z])/g);
-      literals?.forEach((literal, i) => {
-        const isNegated = literal.endsWith("'");
-        const varName = literal.replace("'", "");
-        const literalKey = `LIT_${varName}_${gateId}_${i}`;
-        const notKey = `NOT_${varName}_${gateId}_${i}`;
+  // 1 literál → připojit rovnou na hlavní bránu
+  if (literals.length === 1) {
+    const literal = literals[0];
+    const isNegated = literal.endsWith("'");
+    const varName = literal.replace("'", "");
+    const literalKey = `LIT_${varName}_${termIndex}`;
+    const notKey = `NOT_${varName}_${termIndex}`;
 
-        nodeDataArray.push({ key: literalKey, category: "LITERAL", label: varName });
+    nodeDataArray.push({ key: literalKey, category: "LITERAL", label: varName });
 
-        if (isNegated) {
-          nodeDataArray.push({ key: notKey, category: "NOT" });
-          linkDataArray.push({ from: literalKey, to: notKey });
-          linkDataArray.push({ from: notKey, to: gateId });
-        } else {
-          linkDataArray.push({ from: literalKey, to: gateId });
-        }
-      });
+    if (isNegated) {
+      nodeDataArray.push({ key: notKey, category: "NOT" });
+      linkDataArray.push({ from: literalKey, to: notKey });
+      // propojit přímo na hlavní bránu (kterou vytvoříme níže)
+      linkDataArray.push({ from: notKey, to: mainGate });
+    } else {
+      linkDataArray.push({ from: literalKey, to: mainGate });
+    }
+  }
+
+  // Více literálů → pomocná brána
+  else {
+    const gateId = `${subGate}${termIndex}`;
+    nodeDataArray.push({ key: gateId, category: subGate });
+
+    literals.forEach((literal, i) => {
+      const isNegated = literal.endsWith("'");
+      const varName = literal.replace("'", "");
+      const literalKey = `LIT_${varName}_${gateId}_${i}`;
+      const notKey = `NOT_${varName}_${gateId}_${i}`;
+
+      nodeDataArray.push({ key: literalKey, category: "LITERAL", label: varName });
+
+      if (isNegated) {
+        nodeDataArray.push({ key: notKey, category: "NOT" });
+        linkDataArray.push({ from: literalKey, to: notKey });
+        linkDataArray.push({ from: notKey, to: gateId });
+      } else {
+        linkDataArray.push({ from: literalKey, to: gateId });
+      }
     });
+
+    linkDataArray.push({ from: gateId, to: mainGate });
+  }
+});
+
 
     // Napoj výstupy z podbrán na hlavní bránu
     if (terms.length > 1) {
